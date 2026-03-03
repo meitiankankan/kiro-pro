@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KiroProxy - 智能代理插件</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030014;
+            --text: #ffffff;
+            --text-dim: #94a3b8;
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.5);
+            --secondary: #3b82f6;
+            --border: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --vscode-bg: #1e1e1e;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.15), transparent 40%),
+                radial-gradient(circle at 0% 50%, rgba(59, 130, 246, 0.1), transparent 30%);
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; }
+        .gradient-text {
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(3, 0, 20, 0.6); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner { height: 70px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+        .logo::before { content:''; display:block; width:20px; height:20px; background:linear-gradient(135deg, var(--primary), var(--secondary)); border-radius:4px; }
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a { font-size: 0.95rem; color: var(--text-dim); font-weight: 500; transition: 0.3s; }
+        .nav-links a:hover { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+        /* Hero */
+        .hero {
+            padding-top: 180px; padding-bottom: 120px;
+            text-align: center;
+            position: relative;
+        }
+        .hero::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 800px; height: 800px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            opacity: 0.2; pointer-events: none; z-index: -1;
+        }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 16px; border-radius: 100px;
+            background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #a78bfa; font-size: 0.85rem; font-weight: 600; margin-bottom: 32px;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+        .hero h1 {
+            font-size: clamp(3.5rem, 8vw, 5.5rem); font-weight: 800; letter-spacing: -2px; line-height: 1.1;
+            margin-bottom: 24px;
+        }
+        .hero p {
+            font-size: 1.25rem; color: var(--text-dim); max-width: 600px; margin: 0 auto 48px;
+        }
+        .hero-btns { display: flex; gap: 16px; justify-content: center; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 16px 32px; border-radius: 12px;
+            font-weight: 600; font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer; border: none;
+        }
+        .btn-primary {
+            background: #fff; color: #000;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 40px rgba(255,255,255,0.5);
+        }
+        .btn-outline {
+            background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+
+        /* 3D Mockup Container */
+        .mockup-wrapper {
+            margin-top: 80px;
+            perspective: 2000px;
+            display: flex; justify-content: center;
+        }
+        .mockup-window {
+            width: 1000px; max-width: 95vw; aspect-ratio: 16/10;
+            background: var(--vscode-bg);
+            border: 1px solid #333;
+            border-radius: 16px;
+            box-shadow: 
+                0 0 0 1px rgba(255,255,255,0.05),
+                0 50px 100px -20px rgba(0,0,0,0.7),
+                0 0 80px rgba(139, 92, 246, 0.15); /* Purple glow */
+            transform: rotateX(20deg) scale(0.9);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            display: flex; flex-direction: column; overflow: hidden;
+            position: relative;
+        }
+        .mockup-wrapper:hover .mockup-window {
+            transform: rotateX(0deg) scale(1);
+            box-shadow: 
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 60px 120px -20px rgba(0,0,0,0.8),
+                0 0 120px rgba(139, 92, 246, 0.25);
+        }
+
+        .win-header {
+            height: 36px; background: #252526; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #111;
+        }
+        .win-dots { display: flex; gap: 8px; }
+        .win-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .win-body { flex: 1; display: flex; overflow: hidden; }
+        .win-sidebar { width: 300px; background: #252526; border-right: 1px solid #111; padding: 0; display: flex; flex-direction: column; overflow-y:auto }
+        .win-main { flex: 1; background: #1e1e1e; padding: 24px; position: relative; }
+
+        /* ================================================================= */
+        /* REAL PLUGIN CSS (Extracted from WebviewManager.ts)                */
+        /* Scoped to .kiro-plugin-ui to prevent conflicts                    */
+        /* ================================================================= */
+        .kiro-plugin-ui {
+            --p-primary:#818cf8;--p-success:#4ade80;--p-warning:#fbbf24;--p-danger:#f87171;--p-text:#e4e4e7;--p-sub:#94a3b8;--p-bg:transparent;--p-card-bg:rgba(255,255,255,0.03);--p-card-border:rgba(255,255,255,0.06);
+            font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+            color: var(--p-text);
+            padding: 12px;
+            background: var(--p-bg);
+            text-align: left;
+        }
+        .kiro-plugin-ui * { box-sizing: border-box; }
+        
+        /* Typography */
+        .kiro-plugin-ui .h-title{font-size:11px;font-weight:600;color:var(--p-sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+        .kiro-plugin-ui .val-lg{font-size:20px;font-weight:700;color:var(--p-text)}
+        .kiro-plugin-ui .val-sm{font-size:12px;color:var(--p-sub)}
+        
+        /* Header */
+        .kiro-plugin-ui .hdr{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+        .kiro-plugin-ui .hdr svg{width:20px;height:20px;fill:none;stroke:var(--p-primary);stroke-width:2}
+        .kiro-plugin-ui .hdr span{font-size:14px;font-weight:700;background:linear-gradient(135deg,#818cf8,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        
+        /* Input */
+        .kiro-plugin-ui .input-group{position:relative;margin-bottom:16px}
+        .kiro-plugin-ui .input-group input{width:100%;padding:10px 70px 10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--p-text);font-family:"SF Mono",Consolas,monospace;font-size:12px;outline:none;transition:all 0.2s}
+        .kiro-plugin-ui .input-group input:focus{border-color:rgba(129,140,248,0.5);background:rgba(255,255,255,0.06)}
+        .kiro-plugin-ui .input-group button{position:absolute;right:4px;top:4px;bottom:4px;padding:0 12px;background:var(--p-primary);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+        .kiro-plugin-ui .input-group button:hover{opacity:0.9}
+        
+        /* Card */
+        .kiro-plugin-ui .card{background:var(--p-card-bg);border:1px solid var(--p-card-border);border-radius:12px;padding:14px;margin-bottom:12px}
+        
+        /* Status Card */
+        .kiro-plugin-ui .sts-list{display:flex;flex-direction:column;gap:14px}
+        .kiro-plugin-ui .sts-row{display:flex;justify-content:space-between;align-items:center}
+        .kiro-plugin-ui .sts-label{font-size:11px;color:var(--p-sub)}
+        .kiro-plugin-ui .sts-val{font-size:12px;color:var(--p-text);font-family:"SF Mono",Consolas,monospace;font-weight:500}
+        .kiro-plugin-ui .sts-cd-box{margin-top:4px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;text-align:center}
+        .kiro-plugin-ui .cd-val{font-size:15px;font-weight:700;color:var(--p-text)}
+        .kiro-plugin-ui .cd-danger{color:var(--p-danger)}
+        
+        /* Status Badge */
+        .kiro-plugin-ui .sts-badge{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.05);font-size:11px;font-weight:600;width:fit-content}
+        .kiro-plugin-ui .sts-dot{width:6px;height:6px;border-radius:50%;background:var(--p-sub)}
+        .kiro-plugin-ui .sts-badge.active .sts-dot{background:var(--p-success);box-shadow:0 0 6px rgba(74,222,128,0.4)}
+        
+        /* Rings */
+        .kiro-plugin-ui .rings{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .kiro-plugin-ui .ring-item{display:flex;flex-direction:column;align-items:center}
+        .kiro-plugin-ui .ring-wrap{position:relative;width:80px;height:80px;margin-bottom:8px}
+        .kiro-plugin-ui .ring-wrap svg{width:80px;height:80px;transform:rotate(-90deg)}
+        .kiro-plugin-ui .ring-bg{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:6}
+        .kiro-plugin-ui .ring-fg{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease}
+        .kiro-plugin-ui .ring-in{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+        .kiro-plugin-ui .ring-lbl{font-size:10px;color:var(--p-sub);font-weight:500}
+        
+        /* Charts */
+        .kiro-plugin-ui .chart-box{height:100px;display:flex;align-items:flex-end;justify-content:space-between;gap:4px;padding-top:10px}
+        .kiro-plugin-ui .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+        .kiro-plugin-ui .bar-track{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+        .kiro-plugin-ui .bar{width:12px;border-radius:3px 3px 1px 1px;min-height:2px;opacity:0.8}
+        .kiro-plugin-ui .bar-lbl{font-size:9px;color:var(--p-sub);transform:scale(0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30px}
+        
+        /* Notice */
+        .kiro-plugin-ui .notice{background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.15);border-radius:12px;padding:14px;margin-bottom:12px}
+        .kiro-plugin-ui .notice-t{color:#38bdf8;font-size:11px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+        .kiro-plugin-ui .notice-c{color:var(--p-sub);font-size:11px;line-height:1.5}
+        
+        /* Refresh Btn */
+        .kiro-plugin-ui .ref-btn{width:100%;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--p-sub);border-radius:8px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;gap:6px}
+        .kiro-plugin-ui .ref-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+
+        /* ================================================================= */
+
+        /* Keyframe Animations */
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+        @keyframes pulse-glow { 0%,100%{box-shadow:0 0 5px rgba(74,222,128,0.4)} 50%{box-shadow:0 0 15px rgba(74,222,128,0.8)} }
+        @keyframes gradient-shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes fade-in-up { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes spin-slow { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+        @keyframes ring-pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+        @keyframes bar-grow { from{height:0!important} }
+        @keyframes border-dance { 0%{background-position:0% 0%} 100%{background-position:200% 200%} }
+        @keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
+
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -2; pointer-events: none;
+            background-image: linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Floating Orbs */
+        .orb {
+            position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); z-index: -1;
+        }
+        .orb-1 { width: 400px; height: 400px; background: rgba(139,92,246,0.15); top: 20%; left: -10%; animation: float 8s ease-in-out infinite; }
+        .orb-2 { width: 300px; height: 300px; background: rgba(59,130,246,0.12); top: 60%; right: -5%; animation: float 10s ease-in-out infinite 2s; }
+        .orb-3 { width: 250px; height: 250px; background: rgba(244,114,182,0.1); top: 40%; left: 50%; animation: float 12s ease-in-out infinite 4s; }
+
+        /* Scroll Animation Classes */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* Feature Rows */
+        .features { padding: 120px 0; position: relative; }
+        .section-header { text-align: center; margin-bottom: 100px; }
+        .section-header h2 { 
+            font-size: 3.5rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #38bdf8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% 200%; animation: gradient-shift 6s ease infinite;
+        }
+        .section-header p { font-size: 1.1rem; }
+        
+        .feat-row { display: flex; align-items: center; gap: 80px; margin-bottom: 180px; }
+        .feat-row:last-child { margin-bottom: 0; }
+        .feat-row.reverse { flex-direction: row-reverse; }
+        
+        .feat-txt { flex: 1; }
+        .feat-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 12px; margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2));
+            border: 1px solid rgba(139,92,246,0.3); font-size: 16px; font-weight: 800;
+            color: #a78bfa;
+        }
+        .feat-txt h3 { 
+            font-size: 2.5rem; font-weight: 800; margin-bottom: 24px; color: #fff; line-height: 1.15; letter-spacing: -0.5px;
+        }
+        .feat-txt p { font-size: 1.15rem; color: var(--text-dim); line-height: 1.8; margin-bottom: 0; }
+        .feat-tag {
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 20px;
+            padding: 6px 14px; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+            background: rgba(74,222,128,0.1); color: #4ade80; border: 1px solid rgba(74,222,128,0.2);
+        }
+        
+        /* Animated Gradient Border Wrapper */
+        .feat-ui-wrap {
+            flex: 1; position: relative; border-radius: 18px; padding: 2px;
+            background: linear-gradient(135deg, #818cf8, #f472b6, #38bdf8, #4ade80, #818cf8);
+            background-size: 400% 400%; animation: gradient-shift 8s ease infinite;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), 0 0 80px rgba(139, 92, 246, 0.05);
+            transform: perspective(1200px) rotateY(-4deg);
+            transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .feat-row.reverse .feat-ui-wrap { transform: perspective(1200px) rotateY(4deg); }
+        .feat-ui-wrap:hover { 
+            transform: perspective(1200px) rotateY(0) scale(1.02);
+            box-shadow: 0 0 60px rgba(139, 92, 246, 0.25), 0 0 120px rgba(139, 92, 246, 0.1);
+        }
+
+        .feat-ui { 
+            background: #1a1a2e; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            position: relative;
+        }
+        .feat-ui::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            animation: shimmer 4s ease-in-out infinite;
+        }
+        
+        .feat-ui-header { 
+            background: linear-gradient(135deg, #252526, #1a1a2e); 
+            padding: 14px 18px; display: flex; align-items: center; gap: 8px; 
+            font-size: 11px; color: #888; border-bottom: 1px solid rgba(255,255,255,0.06); 
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .feat-ui-body { padding: 24px; background: linear-gradient(180deg, #1e1e2e, #1a1a28); }
+
+        /* Active dot pulse */
+        .kiro-plugin-ui .sts-badge.active .sts-dot { animation: pulse-glow 2s ease-in-out infinite; }
+        
+        /* Animated bars */
+        .feat-ui .bar { animation: bar-grow 1.2s ease-out; }
+        
+        /* Ring animation */
+        .feat-ui .ring-fg { animation: ring-pulse 3s ease-in-out infinite; }
+
+        /* Downloads */
+        .downloads { padding: 120px 0; position: relative; }
+        .dl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 64px; }
+        .dl-card {
+            background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; 
+            overflow: hidden; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .dl-card:hover { border-color: var(--primary); box-shadow: 0 0 40px rgba(139, 92, 246, 0.15); transform: translateY(-4px); }
+        .dl-preview { 
+            background: #181825; border-bottom: 1px solid rgba(255,255,255,0.04); 
+            padding: 0; position: relative; overflow: hidden; height: 280px;
+        }
+        .dl-preview-inner {
+            transform: scale(0.55); transform-origin: top left;
+            width: 182%; pointer-events: none;
+        }
+        .dl-preview-header { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .dl-content { padding: 32px; text-align: center; }
+        .dl-icon { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .dl-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .dl-ver { display: inline-block; padding: 4px 12px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.2); border-radius: 100px; font-size: 0.8rem; margin-bottom: 20px; color: #a78bfa; font-weight: 600; }
+        .dl-card .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff;
+            box-shadow: 0 0 20px rgba(139,92,246,0.3);
+        }
+        .dl-card .btn-primary:hover { box-shadow: 0 0 30px rgba(139,92,246,0.5); }
+        @media (max-width: 768px) { .dl-grid { grid-template-columns: 1fr; } }
+
+        /* Contacts */
+        .contacts { padding: 100px 0; position: relative; }
+        .ct-highlights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 56px; }
+        .ct-hl-card { position: relative; padding: 32px 28px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 20px; text-align: center; transition: all 0.4s ease; overflow: hidden; }
+        .ct-hl-card::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; border-radius: 0 0 4px 4px; }
+        .ct-hl-card:nth-child(1)::before { background: linear-gradient(90deg, #818cf8, #a78bfa); }
+        .ct-hl-card:nth-child(2)::before { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+        .ct-hl-card:nth-child(3)::before { background: linear-gradient(90deg, #f472b6, #fb923c); }
+        .ct-hl-card:hover { border-color: rgba(139,92,246,0.3); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .ct-hl-icon { width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .ct-hl-card:nth-child(1) .ct-hl-icon { background: rgba(129,140,248,0.1); }
+        .ct-hl-card:nth-child(2) .ct-hl-icon { background: rgba(74,222,128,0.1); }
+        .ct-hl-card:nth-child(3) .ct-hl-icon { background: rgba(244,114,182,0.1); }
+        .ct-hl-card h4 { font-size: 1.2rem; margin-bottom: 8px; }
+        .ct-hl-card p { font-size: 0.9rem; color: var(--text-dim); line-height: 1.6; }
+        .ct-hl-tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; margin-top: 12px; }
+        .ct-hl-card:nth-child(1) .ct-hl-tag { background: rgba(129,140,248,0.12); color: #818cf8; }
+        .ct-hl-card:nth-child(2) .ct-hl-tag { background: rgba(74,222,128,0.12); color: #4ade80; }
+        .ct-hl-card:nth-child(3) .ct-hl-tag { background: rgba(244,114,182,0.12); color: #f472b6; }
+        .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; background: rgba(255,255,255,0.05); width: fit-content; margin: 0 auto 48px; padding: 6px; border-radius: 100px; border: 1px solid var(--border); }
+        .tab { padding: 10px 24px; border-radius: 100px; cursor: pointer; color: var(--text-dim); transition: 0.3s; font-weight: 500; font-size: 0.9rem; }
+        .tab.active { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; box-shadow: 0 4px 16px rgba(139,92,246,0.4); }
+        .ct-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .ct-card { display: flex; align-items: center; gap: 20px; padding: 24px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; transition: all 0.3s ease; cursor: pointer; }
+        .ct-card:hover { border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.05); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .ct-icon { font-size: 1.6rem; width: 52px; height: 52px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ct-card-info { flex: 1; }
+        .ct-card-type { font-size: 0.82rem; color: #888; margin-bottom: 4px; }
+        .ct-card-val { font-size: 1.1rem; font-weight: 600; }
+        .ct-card-copy { padding: 4px 10px; border-radius: 6px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); color: #a78bfa; font-size: 0.75rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .ct-card-copy:hover { background: rgba(139,92,246,0.2); }
+        @media (max-width: 768px) { .ct-highlights { grid-template-columns: 1fr; } .ct-grid { grid-template-columns: 1fr; } }
+
+        /* Steps */
+        .steps { max-width: 800px; margin: 0 auto; padding-left: 24px; border-left: 2px solid rgba(255,255,255,0.1); }
+        .step { position: relative; padding-bottom: 64px; padding-left: 48px; }
+        .step::before {
+            content: attr(data-num); position: absolute; left: -21px; top: 0;
+            width: 40px; height: 40px; background: #000; border: 2px solid var(--primary);
+            border-radius: 50%; color: #fff; font-weight: bold; display: flex; align-items: center; justify-content: center;
+            z-index: 2; box-shadow: 0 0 0 8px var(--bg);
+        }
+        .step h3 { font-size: 1.5rem; margin-bottom: 16px; color: #fff; }
+        .step-mockup {
+            background: #111; border: 1px solid #333; border-radius: 12px; padding: 24px; margin-top: 24px;
+        }
+
+        /* Tutorial Rows */
+        .tut-section { padding: 120px 0; position: relative; }
+        .tut-row { display: flex; align-items: center; gap: 80px; margin-bottom: 120px; }
+        .tut-row:last-child { margin-bottom: 0; }
+        .tut-row.reverse { flex-direction: row-reverse; }
+        .tut-txt { flex: 1; }
+        .tut-step-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 48px; height: 48px; border-radius: 50%; margin-bottom: 20px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            font-size: 18px; font-weight: 800; color: #fff;
+            box-shadow: 0 0 30px rgba(139,92,246,0.3);
+        }
+        .tut-txt h3 { font-size: 2rem; font-weight: 700; margin-bottom: 16px; color: #fff; }
+        .tut-txt p { font-size: 1.1rem; color: var(--text-dim); line-height: 1.7; }
+        .tut-txt ul { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .tut-txt li { font-size: 0.95rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+        .tut-txt li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; flex-shrink: 0; }
+        
+        /* Annotation overlay on UI mockups */
+        .anno {
+            position: absolute; z-index: 10; pointer-events: none;
+        }
+        .anno-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; border-radius: 100px;
+            background: #8b5cf6; color: #fff; font-size: 10px; font-weight: 700;
+            box-shadow: 0 0 20px rgba(139,92,246,0.5);
+            white-space: nowrap;
+        }
+        .anno-arrow {
+            width: 2px; height: 20px; background: #8b5cf6; margin: 0 auto;
+        }
+        .anno-ring {
+            position: absolute; border: 2px solid #8b5cf6; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(139,92,246,0.4); pointer-events: none;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Footer */
+        footer { border-top: 1px solid var(--border); padding: 80px 0; text-align: center; color: var(--text-dim); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .mockup-window { transform: none; width: 100%; aspect-ratio: auto; height: 500px; }
+            .mockup-wrapper { perspective: none; }
+            .feat-row, .feat-row.reverse { flex-direction: column; gap: 40px; }
+            .feat-ui-wrap { transform: none !important; width: 100%; }
+            .feat-ui { transform: none !important; }
+            .tut-row, .tut-row.reverse { flex-direction: column; gap: 40px; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<nav>
+    <div class="container nav-inner">
+        <a href="#" class="logo">KiroProxy</a>
+        <div class="nav-links">
+            <a href="#features">功能</a>
+            <a href="#downloads">下载</a>
+            <a href="#contact">联系</a>
+            <a href="#tutorial">教程</a>
+        </div>
+        <div id="navQQ" style="display:none;align-items:center;gap:6px;padding:5px 14px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);border-radius:100px;font-size:0.82rem;color:#a78bfa;cursor:pointer;transition:0.3s;white-space:nowrap" onclick="copyContact(this.dataset.qq, this.querySelector('.nav-qq-copy'))" title="点击复制QQ群号">
+            <span style="font-size:1rem">🐧</span>
+            <span>QQ群: <strong id="navQQNum" style="color:#c4b5fd"></strong></span>
+            <span class="nav-qq-copy" style="font-size:0.7rem;padding:2px 6px;background:rgba(139,92,246,0.15);border-radius:4px;margin-left:4px">复制</span>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="badge">✨ 支持 Claude Opus 4.6 / Sonnet 4.5 全系列模型</div>
+        <h1 class="gradient-text">释放 AI 开发<br>无限潜能</h1>
+        <p>全模型解锁 / 毫秒级响应 / 企业级熔断保护 / 智能负载均衡</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:32px;flex-wrap:wrap">
+            <span style="padding:4px 12px;border-radius:100px;font-size:0.8rem;font-weight:600;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#a78bfa">Claude Opus 4.6 <span style="opacity:0.6;font-size:0.7rem">3x</span></span>
+            <span style="padding:4px 12px;border-radius:100px;font-size:0.8rem;font-weight:600;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#c084fc">Claude Opus 4.5 <span style="opacity:0.6;font-size:0.7rem">3x</span></span>
+            <span style="padding:4px 12px;border-radius:100px;font-size:0.8rem;font-weight:600;background:rgba(244,114,182,0.15);border:1px solid rgba(244,114,182,0.3);color:#f472b6">Sonnet 4.5 <span style="opacity:0.6;font-size:0.7rem">1.3x</span></span>
+            <span style="padding:4px 12px;border-radius:100px;font-size:0.8rem;font-weight:600;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);color:#38bdf8">Sonnet 4 <span style="opacity:0.6;font-size:0.7rem">1.3x</span></span>
+            <span style="padding:4px 12px;border-radius:100px;font-size:0.8rem;font-weight:600;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80">Haiku 4.5 <span style="opacity:0.6;font-size:0.7rem">0.4x</span></span>
+        </div>
+        <div class="hero-btns">
+            <a href="#downloads" class="btn btn-primary">立即下载插件</a>
+            <a href="#tutorial" class="btn btn-outline">查看安装教程</a>
+        </div>
+
+        <div class="mockup-wrapper">
+            <div class="mockup-window">
+                <div class="win-header">
+                    <div class="win-dots">
+                        <div class="win-dot" style="background:#ff5f56"></div>
+                        <div class="win-dot" style="background:#ffbd2e"></div>
+                        <div class="win-dot" style="background:#27c93f"></div>
+                    </div>
+                    <div style="flex:1;text-align:center;font-size:12px;color:#666">Kiro IDE - Admin</div>
+                </div>
+                <div class="win-body">
+                    <!-- SIDEBAR WITH REAL PLUGIN UI -->
+                    <div class="win-sidebar kiro-plugin-ui">
+                        <div class="hdr">
+                            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            <span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span>
+                        </div>
+
+                        <div class="input-group">
+                            <input value="KIRO-XXXX-XXXX" readonly style="color:#666">
+                            <button>激活</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="sts-list">
+                                <div class="sts-row">
+                                    <div class="sts-label">运行状态</div>
+                                    <div class="sts-badge active"><div class="sts-dot"></div><span class="sts-text">运行中</span></div>
+                                </div>
+                                <div class="sts-row">
+                                    <div class="sts-label">激活状态</div>
+                                    <div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div>
+                                </div>
+                                <div class="sts-row">
+                                    <div class="sts-label">激活日期</div>
+                                    <div class="sts-val">2026-02-19</div>
+                                </div>
+                                <div class="sts-cd-box">
+                                    <div class="sts-label" style="margin-bottom:4px">有效期剩余</div>
+                                    <div class="cd-val">29天 23小时</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="h-title">使用统计</div>
+                            <div class="rings">
+                                <div class="ring-item">
+                                    <div class="ring-wrap">
+                                        <svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg>
+                                        <div class="ring-in">
+                                            <div class="val-lg" style="font-size:16px">42</div>
+                                            <div class="val-sm" style="font-size:9px">/ 200</div>
+                                        </div>
+                                    </div>
+                                    <div class="ring-lbl">今日请求</div>
+                                </div>
+                                <div class="ring-item">
+                                    <div class="ring-wrap">
+                                        <svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg>
+                                        <div class="ring-in">
+                                            <div class="val-lg" style="font-size:16px">1.2k</div>
+                                        </div>
+                                    </div>
+                                    <div class="ring-lbl">累计请求</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="h-title">模型分布</div>
+                            <div class="chart-box">
+                                <div class="bar-group"><div class="bar-track"><div class="bar" style="height:40%;background:#818cf8"></div></div><div class="bar-lbl">O4.6</div></div>
+                                <div class="bar-group"><div class="bar-track"><div class="bar" style="height:70%;background:#c084fc"></div></div><div class="bar-lbl">O4.5</div></div>
+                                <div class="bar-group"><div class="bar-track"><div class="bar" style="height:50%;background:#f472b6"></div></div><div class="bar-lbl">S4.5</div></div>
+                                <div class="bar-group"><div class="bar-track"><div class="bar" style="height:90%;background:#38bdf8"></div></div><div class="bar-lbl">S4</div></div>
+                                <div class="bar-group"><div class="bar-track"><div class="bar" style="height:30%;background:#4ade80"></div></div><div class="bar-lbl">H4.5</div></div>
+                            </div>
+                        </div>
+
+                        <div class="notice">
+                            <div class="notice-t">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                公告
+                            </div>
+                            <div class="notice-c">Kiro 代理服务运行正常，全区节点稳定。</div>
+                        </div>
+
+                        <div style="display:flex;gap:8px;margin-top:12px">
+                            <button class="ref-btn" style="flex:1">
+                                <svg viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                                刷新状态
+                            </button>
+                            <button class="ref-btn" style="flex:1;color:var(--p-danger)">
+                                <svg viewBox="0 0 24 24" style="stroke:var(--p-danger)"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                清理注入
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="win-main" style="display:flex;padding:0">
+                        <!-- Welcome Center -->
+                        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;border-right:1px solid #333">
+                            <!-- Kiro Logo -->
+                            <div style="margin-bottom:24px;opacity:0.6">
+                                <svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="14" r="8" fill="#555"/><path d="M12 38c0-6.6 5.4-12 12-12s12 5.4 12 12" fill="#555"/><circle cx="20" cy="12" r="2" fill="#888"/><circle cx="28" cy="12" r="2" fill="#888"/></svg>
+                            </div>
+                            <div style="font-size:18px;font-weight:700;color:#888;letter-spacing:2px;margin-bottom:28px">KIRO</div>
+                            <!-- Shortcuts Table -->
+                            <div style="width:100%;max-width:280px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <span style="font-size:12px;color:#888">Inline chat</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">I</span></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <span style="font-size:12px;color:#888">Show All Commands</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Shift</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">P</span></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <span style="font-size:12px;color:#888">Go to File</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">P</span></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <span style="font-size:12px;color:#888">Find in Files</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Shift</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">F</span></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                                    <span style="font-size:12px;color:#888">Toggle Terminal</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">`</span></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+                                    <span style="font-size:12px;color:#888">Show Settings</span>
+                                    <div style="display:flex;gap:4px"><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">Ctrl</span><span style="padding:2px 7px;background:#333;border-radius:3px;font-size:10px;color:#aaa;font-family:monospace">,</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Chat Panel -->
+                        <div style="width:260px;background:#1a1a1a;display:flex;flex-direction:column;border-left:1px solid #333">
+                            <!-- Chat Header Tabs -->
+                            <div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #333;gap:8px">
+                                <span style="font-size:11px;color:#ccc;font-weight:600">Kiro Chat</span>
+                                <span style="margin-left:auto;font-size:9px;padding:2px 6px;background:rgba(139,92,246,0.2);color:#a78bfa;border-radius:3px">Autopilot</span>
+                            </div>
+                            <!-- Chat Messages -->
+                            <div style="flex:1;padding:12px;overflow:hidden;display:flex;flex-direction:column;gap:12px">
+                                <!-- Checkpoint -->
+                                <div style="text-align:center;font-size:9px;color:#555;border-bottom:1px dashed #333;padding-bottom:6px">Checkpoint &nbsp;&nbsp; Restore</div>
+                                <!-- User msg -->
+                                <div style="display:flex;justify-content:flex-end">
+                                    <div style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.2);border-radius:10px 10px 2px 10px;padding:8px 10px;max-width:85%;font-size:11px;color:#ddd">你好</div>
+                                </div>
+                                <!-- AI msg -->
+                                <div style="display:flex;gap:8px;align-items:flex-start">
+                                    <div style="width:22px;height:22px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 48 48"><circle cx="24" cy="14" r="6" fill="#888"/><path d="M14 36c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="#888"/></svg></div>
+                                    <div>
+                                        <div style="font-size:10px;font-weight:600;color:#a78bfa;margin-bottom:4px">Kiro</div>
+                                        <div style="font-size:11px;color:#ccc;line-height:1.5">你好！有什么可以帮你的吗？</div>
+                                        <div style="font-size:9px;color:#555;margin-top:4px">Credits used: 0.17 &nbsp; Elapsed: 3s</div>
+                                    </div>
+                                </div>
+                                <!-- Checkpoint 2 -->
+                                <div style="text-align:center;font-size:9px;color:#555;border-bottom:1px dashed #333;padding-bottom:6px">Checkpoint &nbsp;&nbsp; Restore</div>
+                                <!-- User msg 2 -->
+                                <div style="display:flex;justify-content:flex-end">
+                                    <div style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.2);border-radius:10px 10px 2px 10px;padding:8px 10px;max-width:85%;font-size:11px;color:#ddd">帮我优化代码</div>
+                                </div>
+                                <!-- AI msg 2 -->
+                                <div style="display:flex;gap:8px;align-items:flex-start">
+                                    <div style="width:22px;height:22px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 48 48"><circle cx="24" cy="14" r="6" fill="#888"/><path d="M14 36c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="#888"/></svg></div>
+                                    <div>
+                                        <div style="font-size:10px;font-weight:600;color:#a78bfa;margin-bottom:4px">Kiro</div>
+                                        <div style="font-size:11px;color:#ccc;line-height:1.5">好的！让我来分析你的代码...</div>
+                                        <div style="font-size:9px;color:#555;margin-top:4px">Credits used: 0.17 &nbsp; Elapsed: 3s</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Chat Input -->
+                            <div style="padding:8px 12px;border-top:1px solid #333">
+                                <div style="display:flex;align-items:center;gap:8px;background:#252526;border:1px solid #444;border-radius:8px;padding:8px 10px">
+                                    <span style="font-size:11px;color:#555;flex:1">Ask a question...</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;justify-content:space-between">
+                                    <div style="display:flex;gap:6px"><span style="font-size:9px;color:#555">#</span><span style="font-size:9px;color:#555">@</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px">
+                                        <span style="font-size:9px;color:#888">Claude Opus 4.6</span>
+                                        <div style="width:28px;height:14px;background:#8b5cf6;border-radius:7px;position:relative"><div style="width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;right:2px;top:2px"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features" id="features">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="container">
+        <div class="section-header reveal">
+            <h2>功能介绍</h2>
+            <p style="color:var(--text-dim);font-size:1.2rem">插件全部功能，一览无余</p>
+        </div>
+        
+        <!-- 1. Usage Statistics -->
+        <div class="feat-row reveal">
+            <div class="feat-txt">
+                <div class="feat-num">01</div>
+                <h3>用量统计</h3>
+                <p>实时监控您的 API 调用次数和流量消耗，本地/云端双重统计，拒绝任何隐形消费。可视化环形图让数据一目了然。</p>
+                <div class="feat-tag">实时数据可视化</div>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body">
+                        <div class="kiro-plugin-ui" style="padding:0">
+                            <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                            <div class="input-group"><input value="KIRO-A8X2-K9MN" readonly style="color:#666"><button>激活</button></div>
+                            <div class="card">
+                                <div class="sts-list">
+                                    <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div>
+                                    <div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div>
+                                </div>
+                            </div>
+                            <div class="card" style="border:2px solid rgba(74,222,128,0.3);box-shadow:0 0 20px rgba(74,222,128,0.1)">
+                                <div class="h-title" style="color:#4ade80">▸ 使用统计</div>
+                                <div class="rings">
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">128</div><div class="val-sm" style="font-size:9px">/ 200</div></div></div><div class="ring-lbl">今日请求</div></div>
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">1.2k</div></div></div><div class="ring-lbl">累计请求</div></div>
+                                </div>
+                            </div>
+                            <div class="card" style="opacity:0.4">
+                                <div class="h-title">模型分布</div>
+                                <div class="chart-box"><div class="bar-group"><div class="bar-track"><div class="bar" style="height:40%;background:#818cf8"></div></div><div class="bar-lbl">O4.6</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:70%;background:#f472b6"></div></div><div class="bar-lbl">O4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:50%;background:#38bdf8"></div></div><div class="bar-lbl">S4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:90%;background:#4ade80"></div></div><div class="bar-lbl">S4</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:30%;background:#fbbf24"></div></div><div class="bar-lbl">H4.5</div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Model Distribution -->
+        <div class="feat-row reverse reveal">
+            <div class="feat-txt">
+                <div class="feat-num">02</div>
+                <h3>模型分布统计</h3>
+                <p>深度分析您的模型使用偏好。支持 Claude Opus 4.6, Sonnet 4.5, Sonnet 4, Haiku 4.5 等全系列模型，自动生成使用占比图表。</p>
+                <div class="feat-tag">智能分析引擎</div>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body">
+                        <div class="kiro-plugin-ui" style="padding:0">
+                            <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                            <div class="input-group" style="opacity:0.4"><input value="KIRO-A8X2-K9MN" readonly style="color:#666"><button>激活</button></div>
+                            <div class="card" style="opacity:0.4">
+                                <div class="sts-list">
+                                    <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                </div>
+                            </div>
+                            <div class="card" style="opacity:0.4">
+                                <div class="h-title">使用统计</div>
+                                <div class="rings">
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">128</div><div class="val-sm" style="font-size:9px">/ 200</div></div></div><div class="ring-lbl">今日请求</div></div>
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">1.2k</div></div></div><div class="ring-lbl">累计请求</div></div>
+                                </div>
+                            </div>
+                            <div class="card" style="border:2px solid rgba(129,140,248,0.3);box-shadow:0 0 20px rgba(129,140,248,0.1)">
+                                <div class="h-title" style="color:#818cf8">▸ 模型分布</div>
+                                <div class="chart-box"><div class="bar-group"><div class="bar-track"><div class="bar" style="height:40%;background:#818cf8"></div></div><div class="bar-lbl">O4.6</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:70%;background:#f472b6"></div></div><div class="bar-lbl">O4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:50%;background:#38bdf8"></div></div><div class="bar-lbl">S4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:90%;background:#4ade80"></div></div><div class="bar-lbl">S4</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:30%;background:#fbbf24"></div></div><div class="bar-lbl">H4.5</div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Status Monitoring -->
+        <div class="feat-row reveal">
+            <div class="feat-txt">
+                <div class="feat-num">03</div>
+                <h3>实时状态监控</h3>
+                <p>一目了然的运行状态面板。激活状态、有效期倒计时、运行状态等关键信息集中展示，随时掌控服务健康度。</p>
+                <div class="feat-tag">全局状态感知</div>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body">
+                        <div class="kiro-plugin-ui" style="padding:0">
+                            <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                            <div class="input-group" style="opacity:0.4"><input value="KIRO-A8X2-K9MN" readonly style="color:#666"><button>激活</button></div>
+                            <div class="card" style="border:2px solid rgba(74,222,128,0.3);box-shadow:0 0 20px rgba(74,222,128,0.1)">
+                                <div class="sts-list">
+                                    <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div>
+                                    <div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div>
+                                </div>
+                            </div>
+                            <div class="card" style="opacity:0.4">
+                                <div class="h-title">使用统计</div>
+                                <div class="rings">
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">128</div><div class="val-sm" style="font-size:9px">/ 200</div></div></div><div class="ring-lbl">今日请求</div></div>
+                                    <div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">1.2k</div></div></div><div class="ring-lbl">累计请求</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Notice & Announcement -->
+        <div class="feat-row reverse reveal">
+            <div class="feat-txt">
+                <div class="feat-num">04</div>
+                <h3>公告通知系统</h3>
+                <p>实时接收服务公告和系统通知。维护提醒、版本更新、节点状态变更等重要信息第一时间推送到插件面板。</p>
+                <div class="feat-tag">消息实时推送</div>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body">
+                        <div class="kiro-plugin-ui" style="padding:0">
+                            <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                            <div class="input-group" style="opacity:0.4"><input value="KIRO-A8X2-K9MN" readonly style="color:#666"><button>激活</button></div>
+                            <div class="card" style="opacity:0.4">
+                                <div class="sts-list">
+                                    <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                </div>
+                            </div>
+                            <div class="notice" style="border:2px solid rgba(56,189,248,0.3);box-shadow:0 0 20px rgba(56,189,248,0.1)">
+                                <div class="notice-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 公告</div>
+                                <div class="notice-c">Kiro 代理服务运行正常，全区节点稳定。新增 Claude Opus 4.6 模型支持。</div>
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:12px;opacity:0.4">
+                                <button class="ref-btn" style="flex:1"><svg viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> 刷新状态</button>
+                                <button class="ref-btn" style="flex:1;color:var(--p-danger)"><svg viewBox="0 0 24 24" style="stroke:var(--p-danger)"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 清理注入</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. One-click Activation -->
+        <div class="feat-row reveal">
+            <div class="feat-txt">
+                <div class="feat-num">05</div>
+                <h3>一键激活使用</h3>
+                <p>告别繁琐配置。只需输入激活码，插件自动完成环境注入、依赖安装和连接测试。真正的开箱即用体验。</p>
+                <div class="feat-tag">零配置上手</div>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body">
+                        <div class="kiro-plugin-ui" style="padding:0">
+                            <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                            <div class="input-group" style="border:2px solid rgba(129,140,248,0.3);border-radius:10px;box-shadow:0 0 20px rgba(129,140,248,0.1)"><input value="KIRO-A8X2-K9MN" readonly style="color:#818cf8"><button>激活</button></div>
+                            <div style="font-size:11px;padding:8px;border-radius:6px;background:rgba(74,222,128,0.1);color:#4ade80;margin-bottom:12px;text-align:center">激活成功，正在注入代理代码...</div>
+                            <div class="card">
+                                <div class="sts-list">
+                                    <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                    <div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div>
+                                    <div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<section class="downloads" id="downloads">
+    <div class="container">
+        <div class="section-header reveal">
+            <h2>下载中心</h2>
+            <p style="color:var(--text-dim);font-size:1.2rem">获取最新版本客户端</p>
+        </div>
+        <div class="dl-grid" id="dlGrid">
+            <!-- JS Populated -->
+        </div>
+    </div>
+</section>
+
+<section class="contacts" id="contact">
+    <div class="container">
+        <div class="section-header reveal">
+            <h2>联系我们</h2>
+            <p style="color:var(--text-dim);font-size:1.1rem">专业诚信售后 · 问题在线秒解决 · 支持远程协助</p>
+        </div>
+
+        <div class="ct-highlights reveal">
+            <div class="ct-hl-card">
+                <div class="ct-hl-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <h4>专业诚信售后</h4>
+                <p>一对一技术支持，不满意全额退款。团队深耕 AI 开发工具领域，值得信赖。</p>
+                <div class="ct-hl-tag">100% 好评保障</div>
+            </div>
+            <div class="ct-hl-card">
+                <div class="ct-hl-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h4>问题在线秒解决</h4>
+                <p>7×12 小时在线响应，平均 30 秒内回复。安装、配置、使用问题即时解答。</p>
+                <div class="ct-hl-tag">极速响应</div>
+            </div>
+            <div class="ct-hl-card">
+                <div class="ct-hl-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><circle cx="12" cy="10" r="2"/><path d="M17 10c0-2.8-2.2-5-5-5s-5 2.2-5 5"/></svg>
+                </div>
+                <h4>支持远程协助</h4>
+                <p>复杂问题可远程桌面协助安装配置，手把手帮您搞定一切，零门槛使用。</p>
+                <div class="ct-hl-tag">远程桌面支持</div>
+            </div>
+        </div>
+
+        <div class="tabs" id="ctTabs"></div>
+        <div class="ct-grid" id="ctGrid"></div>
+    </div>
+</section>
+
+<section class="tut-section" id="tutorial">
+    <div class="container">
+        <div class="section-header reveal">
+            <h2>安装教程</h2>
+            <p style="color:var(--text-dim);font-size:1.2rem">六步开启智能之旅</p>
+        </div>
+
+        <!-- Step 1: Download & Open Kiro - Login Screen -->
+        <div class="tut-row reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">1</div>
+                <h3>下载并打开 Kiro IDE</h3>
+                <p>从下载中心获取 Kiro IDE 安装包，双击安装完成后打开。首次启动会进入登录界面，点击 <strong>Sign in</strong> 按钮开始登录。</p>
+                <ul>
+                    <li>支持 Windows / macOS / Linux</li>
+                    <li>双击安装包按提示完成安装</li>
+                    <li>首次打开进入登录界面</li>
+                    <li>点击紫色 Sign in 按钮</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro IDE</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1128">
+                        <!-- KIRO Logo -->
+                        <div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:16px">
+                            <div style="font-size:48px;font-weight:900;letter-spacing:6px;color:transparent;-webkit-text-stroke:2.5px #8b5cf6">KIRO</div>
+                            <div style="margin-top:-8px">
+                                <svg width="36" height="36" viewBox="0 0 48 48"><ellipse cx="24" cy="22" rx="14" ry="16" fill="#fff"/><circle cx="19" cy="19" r="3" fill="#1a1128"/><circle cx="29" cy="19" r="3" fill="#1a1128"/><path d="M18 38 Q24 44 30 38" fill="#fff" stroke="none"/></svg>
+                            </div>
+                        </div>
+                        <div style="font-size:13px;color:#94a3b8;margin-bottom:8px">An agentic IDE that helps you do</div>
+                        <div style="font-size:13px;color:#94a3b8;margin-bottom:28px">your best work.</div>
+                        <!-- Sign in Button -->
+                        <div style="position:relative">
+                            <div style="padding:12px 80px;background:#8b5cf6;border-radius:6px;font-size:14px;color:#fff;font-weight:600;cursor:pointer;text-align:center">Sign in</div>
+                            <div class="anno-ring" style="top:-4px;left:-4px;right:-4px;bottom:-4px;border-radius:10px;border-color:#4ade80;box-shadow:0 0 15px rgba(74,222,128,0.4)"></div>
+                        </div>
+                        <div style="font-size:9px;color:#555;margin-top:16px;text-align:center;line-height:1.6">By signing in, you agree to the <span style="color:#818cf8">AWS Customer Agreement</span>,<br><span style="color:#818cf8">Service Terms</span>, and <span style="color:#818cf8">Privacy Notice</span>.</div>
+                        <div class="anno" style="bottom:12px;right:12px"><div class="anno-badge">点击 Sign in</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Browser Redirect -->
+        <div class="tut-row reverse reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">2</div>
+                <h3>跳转浏览器登录</h3>
+                <p>点击 Sign in 后，Kiro 会自动跳转到默认浏览器进行登录。如果没有自动跳转，可以手动复制链接在浏览器中打开。</p>
+                <ul>
+                    <li>自动打开默认浏览器</li>
+                    <li>如未跳转可手动复制链接</li>
+                    <li>登录完成后自动返回 IDE</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro IDE</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1128">
+                        <div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:20px">
+                            <div style="font-size:40px;font-weight:900;letter-spacing:5px;color:transparent;-webkit-text-stroke:2px #8b5cf6">KIRO</div>
+                            <svg width="30" height="30" viewBox="0 0 48 48" style="margin-top:-6px"><ellipse cx="24" cy="22" rx="14" ry="16" fill="#fff"/><circle cx="19" cy="19" r="3" fill="#1a1128"/><circle cx="29" cy="19" r="3" fill="#1a1128"/></svg>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;text-align:center;margin-bottom:6px">We will take you to your default</div>
+                        <div style="font-size:12px;color:#94a3b8;text-align:center;margin-bottom:4px">web browser to sign in and bring</div>
+                        <div style="font-size:12px;color:#94a3b8;text-align:center;margin-bottom:20px">you back when it's complete...</div>
+                        <div style="font-size:10px;color:#666;margin-bottom:8px">Or open this link in your browser:</div>
+                        <div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);border-radius:6px;padding:10px 14px;font-size:9px;color:#818cf8;word-break:break-all;max-width:300px;line-height:1.5">https://app.kiro.dev/signin?state=ebaefe8e...</div>
+                        <div style="padding:8px 40px;background:rgba(139,92,246,0.3);border:1px solid rgba(139,92,246,0.4);border-radius:6px;font-size:12px;color:#ccc;margin-top:16px">Cancel</div>
+                        <div class="anno" style="bottom:12px;right:12px"><div class="anno-badge">等待浏览器跳转</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Choose Login Method -->
+        <div class="tut-row reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">3</div>
+                <h3>选择登录方式</h3>
+                <p>在浏览器登录页面选择登录方式。支持 Google、GitHub、AWS Builder ID 等多种登录方式。</p>
+                <ul>
+                    <li><strong>Google</strong> — 需要科学上网</li>
+                    <li><strong>GitHub</strong> — 无需科学上网，推荐使用</li>
+                    <li>Builder ID — AWS 开发者账号</li>
+                    <li>Your organization — 企业 SSO 登录</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">app.kiro.dev</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;min-height:320px;display:flex;flex-direction:column;align-items:center;padding-top:24px;background:#1a1128">
+                        <!-- Logo -->
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+                            <svg width="24" height="24" viewBox="0 0 48 48"><ellipse cx="24" cy="22" rx="12" ry="14" fill="#fff"/><circle cx="20" cy="19" r="2.5" fill="#1a1128"/><circle cx="28" cy="19" r="2.5" fill="#1a1128"/></svg>
+                            <span style="font-size:16px;font-weight:700;color:#e4e4e7;letter-spacing:2px">KIRO</span>
+                        </div>
+                        <div style="font-size:13px;color:#94a3b8;margin-bottom:24px">Choose a way to sign in/sign up</div>
+                        <!-- Login Buttons -->
+                        <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:10px">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;font-size:13px;color:#e4e4e7;font-weight:500;background:rgba(255,255,255,0.03)">
+                                <span style="font-size:16px;font-weight:700;color:#ea4335">G</span> Google
+                                <span style="margin-left:auto;font-size:8px;padding:2px 6px;background:rgba(251,191,36,0.15);color:#fbbf24;border-radius:3px">需魔法</span>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:2px solid rgba(74,222,128,0.3);border-radius:6px;font-size:13px;color:#e4e4e7;font-weight:500;background:rgba(74,222,128,0.05);position:relative">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#e4e4e7"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                                GitHub
+                                <span style="margin-left:auto;font-size:8px;padding:2px 6px;background:rgba(74,222,128,0.15);color:#4ade80;border-radius:3px">推荐</span>
+                                <div class="anno-ring" style="top:-4px;left:-4px;right:-4px;bottom:-4px;border-radius:10px;border-color:#4ade80;box-shadow:0 0 15px rgba(74,222,128,0.4)"></div>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;font-size:13px;color:#e4e4e7;font-weight:500;background:rgba(255,255,255,0.03)">
+                                <span style="font-size:10px;color:#ff9900;font-weight:700">aws</span> Builder ID
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;font-size:13px;color:#e4e4e7;font-weight:500;background:rgba(255,255,255,0.03)">
+                                Your organization
+                            </div>
+                        </div>
+                        <div class="anno" style="bottom:12px;right:12px"><div class="anno-badge">推荐 GitHub 登录</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Verify Login Success -->
+        <div class="tut-row reverse reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">4</div>
+                <h3>确认登录成功</h3>
+                <p>登录成功后返回 Kiro IDE，点击左下角头像图标可以查看账户信息，确认已经登录成功并显示 Kiro Power 计划。</p>
+                <ul>
+                    <li>登录后自动返回 IDE</li>
+                    <li>点击左下角头像查看账户</li>
+                    <li>确认显示 Kiro Power 计划</li>
+                    <li>查看 Credits 用量</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Account</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;background:#1e1e2e">
+                        <!-- Account Card -->
+                        <div style="background:#252535;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06)">
+                            <!-- User Info -->
+                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+                                <svg width="36" height="36" viewBox="0 0 48 48"><ellipse cx="24" cy="22" rx="12" ry="14" fill="#fff"/><circle cx="20" cy="19" r="2.5" fill="#252535"/><circle cx="28" cy="19" r="2.5" fill="#252535"/></svg>
+                                <div style="flex:1">
+                                    <div style="font-size:14px;font-weight:700;color:#e4e4e7">Kiro</div>
+                                    <div style="font-size:10px;color:#888">Signed in with Google &nbsp;|&nbsp; User ID</div>
+                                </div>
+                                <div style="padding:5px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:4px;font-size:10px;color:#ccc">Sign Out</div>
+                            </div>
+                            <!-- Usage -->
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                                <div style="font-size:12px;color:#ccc">Estimated Usage <span style="color:#666;font-size:10px">resets on 03/01</span></div>
+                                <div style="padding:3px 10px;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.3);border-radius:4px;font-size:10px;color:#a78bfa;font-weight:700">Kiro Power</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:600;color:#e4e4e7;margin-bottom:8px">Credits</div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                                <div style="font-size:11px;color:#888;flex:1">9,965.89 used / 10,000 covered in plan</div>
+                            </div>
+                            <!-- Progress bar -->
+                            <div style="width:100%;height:6px;background:#333;border-radius:3px;overflow:hidden;margin-bottom:20px">
+                                <div style="width:99.6%;height:100%;background:linear-gradient(90deg,#8b5cf6,#f97316);border-radius:3px"></div>
+                            </div>
+                            <!-- Overages -->
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                                <div style="font-size:13px;font-weight:600;color:#e4e4e7">Overages</div>
+                                <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:#888">Disabled</span><div style="width:28px;height:14px;background:#444;border-radius:7px;position:relative"><div style="width:10px;height:10px;background:#888;border-radius:50%;position:absolute;left:2px;top:2px"></div></div></div>
+                            </div>
+                            <div style="font-size:10px;color:#666;line-height:1.5;margin-bottom:16px">Turn on overages to keep using Kiro past these limits<br>$0.04 per additional Credit.</div>
+                            <!-- Manage Plan Button -->
+                            <div style="padding:12px;background:#8b5cf6;border-radius:8px;font-size:13px;color:#fff;font-weight:600;text-align:center">Manage Plan</div>
+                            <div style="font-size:10px;color:#818cf8;text-align:center;margin-top:10px">Contact Billing Support</div>
+                        </div>
+                        <div class="anno" style="bottom:12px;right:12px"><div class="anno-badge">确认 Kiro Power 已激活</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Install Extension Plugin -->
+        <div class="tut-row reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">5</div>
+                <h3>安装代理插件</h3>
+                <p>点击左侧栏的扩展图标（方块图标）打开扩展面板，通过 "..." 菜单选择 Install from VSIX，安装下载好的插件文件。</p>
+                <ul>
+                    <li>点击左侧栏扩展图标</li>
+                    <li>点击右上角 "..." 菜单</li>
+                    <li>选择 Install from VSIX</li>
+                    <li>选择下载的 .vsix 文件完成安装</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro IDE - Extensions</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;display:flex;gap:0;padding:0">
+                        <!-- Sidebar Icons -->
+                        <div style="width:40px;background:#181825;display:flex;flex-direction:column;align-items:center;padding-top:12px;gap:16px;border-right:1px solid rgba(255,255,255,0.04)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                            <!-- Extensions icon highlighted -->
+                            <div style="position:relative">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M20.5 7.5h-17l2-4h13l2 4z"/><path d="M3.5 7.5v12h17v-12"/><path d="M10 11.5h4v4h-4z"/></svg>
+                                <div class="anno-ring" style="top:-6px;left:-6px;right:-6px;bottom:-6px;border-radius:6px;border-color:#8b5cf6"></div>
+                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                        <!-- Extensions Panel -->
+                        <div style="flex:1;padding:16px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                                <span style="font-size:12px;color:#ccc;font-weight:600">扩展</span>
+                                <div style="display:flex;gap:6px;align-items:center">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                                    <span style="font-size:11px;color:#888">...</span>
+                                </div>
+                            </div>
+                            <!-- Search -->
+                            <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:6px 10px;margin-bottom:12px;font-size:10px;color:#555">在应用商店中搜索扩展</div>
+                            <div style="font-size:10px;color:#888;margin-bottom:8px">已安装 <span style="background:rgba(139,92,246,0.2);color:#a78bfa;padding:1px 6px;border-radius:8px;font-size:9px;margin-left:4px">2</span></div>
+                            <!-- Installed Extensions -->
+                            <div style="display:flex;gap:10px;align-items:center;padding:8px;border-radius:6px;margin-bottom:6px;background:rgba(255,255,255,0.02)">
+                                <div style="width:32px;height:32px;background:#333;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px">中</div>
+                                <div style="flex:1"><div style="font-size:11px;color:#ccc;font-weight:600">Chinese (Simplified)</div><div style="font-size:9px;color:#666">中文(简体) &nbsp; MS-CEINTL</div></div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;padding:8px;border-radius:6px;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);position:relative">
+                                <div style="width:32px;height:32px;background:linear-gradient(135deg,#818cf8,#38bdf8);border-radius:6px;display:flex;align-items:center;justify-content:center">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                </div>
+                                <div style="flex:1"><div style="font-size:11px;color:#ccc;font-weight:600">Kiro 账号管理客户端</div><div style="font-size:9px;color:#666">连接后端 API 管理 Kiro 账号 &nbsp; kiro-admin</div></div>
+                                <div style="font-size:9px;color:#888;display:flex;align-items:center;gap:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> 101ms</div>
+                                <div class="anno-ring" style="top:-3px;left:-3px;right:-3px;bottom:-3px;border-radius:8px;border-color:#4ade80;box-shadow:0 0 12px rgba(74,222,128,0.3)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 6: Open Plugin & Activate -->
+        <div class="tut-row reverse reveal">
+            <div class="tut-txt">
+                <div class="tut-step-num">6</div>
+                <h3>打开插件并激活</h3>
+                <p>安装完成后，点击左侧栏的闪电图标进入插件管理面板，输入您获取的激活码，点击「激活」按钮即可享受无限 AI 能力。</p>
+                <ul>
+                    <li>点击左侧栏闪电 ⚡ 图标</li>
+                    <li>在输入框粘贴激活码</li>
+                    <li>点击「激活」按钮</li>
+                    <li>等待自动注入完成即可使用</li>
+                </ul>
+            </div>
+            <div class="feat-ui-wrap">
+                <div class="feat-ui">
+                    <div class="feat-ui-header">
+                        <div style="display:flex;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div><div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div><div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div></div>
+                        <div style="margin-left:auto">Kiro Admin Client</div>
+                    </div>
+                    <div class="feat-ui-body" style="position:relative;display:flex;gap:0;padding:0">
+                        <!-- Sidebar Icons -->
+                        <div style="width:40px;background:#181825;display:flex;flex-direction:column;align-items:center;padding-top:12px;gap:16px;border-right:1px solid rgba(255,255,255,0.04)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><path d="M20.5 7.5h-17l2-4h13l2 4z"/><path d="M3.5 7.5v12h17v-12"/></svg>
+                            <!-- Lightning icon highlighted -->
+                            <div style="position:relative">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                <div class="anno-ring" style="top:-6px;left:-6px;right:-6px;bottom:-6px;border-radius:6px;border-color:#8b5cf6"></div>
+                            </div>
+                        </div>
+                        <!-- Plugin Panel -->
+                        <div style="flex:1;padding:16px">
+                            <div class="kiro-plugin-ui" style="padding:0">
+                                <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                                <div style="position:relative">
+                                    <div class="input-group" style="border:2px solid rgba(139,92,246,0.4);border-radius:10px;box-shadow:0 0 20px rgba(139,92,246,0.15)">
+                                        <input value="KIRO-B5C5-AAB1-4203" readonly style="color:#818cf8">
+                                        <button style="animation:pulse-glow 2s ease-in-out infinite">激活</button>
+                                    </div>
+                                    <div class="anno" style="top:-28px;left:50%;transform:translateX(-50%)"><div class="anno-badge">输入激活码 → 点击激活</div></div>
+                                </div>
+                                <div style="font-size:11px;padding:8px;border-radius:6px;background:rgba(74,222,128,0.1);color:#4ade80;margin-bottom:12px;text-align:center">激活成功，正在注入代理代码...</div>
+                                <div class="card">
+                                    <div class="sts-list">
+                                        <div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div>
+                                        <div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div>
+                                        <div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div>
+                                        <div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="logo" style="justify-content:center;margin-bottom:24px;opacity:0.5">KiroProxy</div>
+        <p>&copy; 2026 KiroProxy. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    const API = location.origin;
+    function fmtSize(bytes) {
+        if(!bytes) return '';
+        if(bytes<1024) return bytes+' B';
+        if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
+        return (bytes/1024/1024).toFixed(1)+' MB';
+    }
+
+    async function init() {
+        // Default data - MODIFIED: Use original site for downloads, QQ changed to 1090760214
+        const ORIGINAL_SITE = 'https://nexusphere.icu';
+        
+        let plugins = [];
+        let config = {
+            qq_group: '1090760214',
+            kiro_download_url: 'https://kiro.dev/download',
+            regions: [{id: 'default', name: '默认区域'}]
+        };
+        let regionContacts = {
+            'default': [
+                {type: 'QQ群', value: '1090760214', label: '官方群'},
+                {type: 'QQ', value: '1090760214', label: '客服'}
+            ]
+        };
+        
+        try {
+            // Try to fetch from original site to get real download links
+            const res = await fetch(ORIGINAL_SITE + '/api/public/site-data');
+            const d = await res.json();
+            if(d.success) {
+                // Use original plugins and config for downloads
+                plugins = d.data.plugins || plugins;
+                config = {...config, ...d.data.config};
+                // But keep our modified QQ
+                config.qq_group = '1090760214';
+                // Override regionContacts with our QQ
+                regionContacts = d.data.regionContacts || regionContacts;
+            }
+        } catch(e) {
+            console.log('Could not fetch from original site, using fallback:', e);
+            // Fallback: redirect download buttons to original site
+            plugins = [
+                {
+                    id: 'kiro-proxy',
+                    name: 'Kiro 代理插件',
+                    version: '1.0.0',
+                    description: '企业级代理插件，支持全系列 Claude 模型',
+                    file_size: 1024000,
+                    download_url: ORIGINAL_SITE + '/?region=B#downloads',
+                    icon: ''
+                }
+            ];
+        }
+        
+        try {
+
+            // Downloads - with scaled-down Hero mockup previews
+            const kiroPreview = `
+                <div class="dl-preview">
+                    <div class="dl-preview-inner">
+                        <div style="background:#252526;border-bottom:1px solid #333">
+                            <div style="display:flex;align-items:center;gap:6px;padding:8px 12px">
+                                <div style="width:8px;height:8px;border-radius:50%;background:#ff5f56"></div>
+                                <div style="width:8px;height:8px;border-radius:50%;background:#ffbd2e"></div>
+                                <div style="width:8px;height:8px;border-radius:50%;background:#27c93f"></div>
+                                <div style="flex:1;text-align:center;font-size:11px;color:#666">Kiro IDE - Admin</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;background:#1e1e1e">
+                            <div class="kiro-plugin-ui" style="width:240px;flex-shrink:0;border-right:1px solid #333;padding:12px">
+                                <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                                <div class="input-group"><input value="KIRO-XXXX-XXXX" readonly style="color:#666"><button>激活</button></div>
+                                <div class="card"><div class="sts-list"><div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div><div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div><div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div><div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div></div></div>
+                                <div class="card"><div class="h-title">使用统计</div><div class="rings"><div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">42</div><div class="val-sm" style="font-size:9px">/ 200</div></div></div><div class="ring-lbl">今日请求</div></div><div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">1.2k</div></div></div><div class="ring-lbl">累计请求</div></div></div></div>
+                                <div class="card"><div class="h-title">模型分布</div><div class="chart-box"><div class="bar-group"><div class="bar-track"><div class="bar" style="height:40%;background:#818cf8"></div></div><div class="bar-lbl">O4.6</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:70%;background:#f472b6"></div></div><div class="bar-lbl">O4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:50%;background:#38bdf8"></div></div><div class="bar-lbl">S4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:90%;background:#4ade80"></div></div><div class="bar-lbl">S4</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:30%;background:#fbbf24"></div></div><div class="bar-lbl">H4.5</div></div></div></div>
+                            </div>
+                            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+                                <div style="margin-bottom:16px;opacity:0.5"><svg width="36" height="36" viewBox="0 0 48 48"><circle cx="24" cy="14" r="8" fill="#555"/><path d="M12 38c0-6.6 5.4-12 12-12s12 5.4 12 12" fill="#555"/><circle cx="20" cy="12" r="2" fill="#888"/><circle cx="28" cy="12" r="2" fill="#888"/></svg></div>
+                                <div style="font-size:14px;font-weight:700;color:#888;letter-spacing:2px;margin-bottom:16px">KIRO</div>
+                                <div style="font-size:10px;color:#888;margin-bottom:4px">Inline chat <span style="padding:1px 5px;background:#333;border-radius:2px;font-size:9px;font-family:monospace">Ctrl I</span></div>
+                                <div style="font-size:10px;color:#888;margin-bottom:4px">Go to File <span style="padding:1px 5px;background:#333;border-radius:2px;font-size:9px;font-family:monospace">Ctrl P</span></div>
+                                <div style="font-size:10px;color:#888">Find in Files <span style="padding:1px 5px;background:#333;border-radius:2px;font-size:9px;font-family:monospace">Ctrl Shift F</span></div>
+                            </div>
+                            <div style="width:200px;background:#1a1a1a;border-left:1px solid #333;display:flex;flex-direction:column">
+                                <div style="padding:6px 10px;border-bottom:1px solid #333;display:flex;align-items:center"><span style="font-size:10px;color:#ccc;font-weight:600">Kiro Chat</span><span style="margin-left:auto;font-size:8px;padding:1px 4px;background:rgba(139,92,246,0.2);color:#a78bfa;border-radius:2px">Autopilot</span></div>
+                                <div style="flex:1;padding:10px;display:flex;flex-direction:column;gap:8px">
+                                    <div style="text-align:center;font-size:8px;color:#555;border-bottom:1px dashed #333;padding-bottom:4px">Checkpoint</div>
+                                    <div style="display:flex;justify-content:flex-end"><div style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.2);border-radius:8px 8px 2px 8px;padding:6px 8px;font-size:10px;color:#ddd">你好</div></div>
+                                    <div style="display:flex;gap:6px"><div style="width:18px;height:18px;border-radius:50%;background:#333;flex-shrink:0"></div><div><div style="font-size:9px;font-weight:600;color:#a78bfa">Kiro</div><div style="font-size:10px;color:#ccc">你好！需要帮忙做什么？</div><div style="font-size:8px;color:#555">Credits: 0.17</div></div></div>
+                                </div>
+                                <div style="padding:6px 10px;border-top:1px solid #333"><div style="background:#252526;border:1px solid #444;border-radius:6px;padding:6px 8px;font-size:9px;color:#555">Ask a question...</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            const pluginPreview = `
+                <div class="dl-preview">
+                    <div class="dl-preview-inner">
+                        <div style="background:#252526;border-bottom:1px solid #333">
+                            <div style="display:flex;align-items:center;gap:6px;padding:8px 12px">
+                                <div style="width:8px;height:8px;border-radius:50%;background:#ff5f56"></div>
+                                <div style="width:8px;height:8px;border-radius:50%;background:#ffbd2e"></div>
+                                <div style="width:8px;height:8px;border-radius:50%;background:#27c93f"></div>
+                                <div style="flex:1;text-align:center;font-size:11px;color:#666">Kiro Admin Client</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;background:#1e1e1e">
+                            <div style="width:40px;background:#181825;display:flex;flex-direction:column;align-items:center;padding-top:10px;gap:14px;border-right:1px solid rgba(255,255,255,0.04)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            </div>
+                            <div class="kiro-plugin-ui" style="flex:1;padding:12px">
+                                <div class="hdr"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Kiro 无限续杯</span><span style="font-size:9px;color:#555;margin-left:auto">v1.0.0</span></div>
+                                <div class="input-group"><input value="KIRO-B5C5-AAB1-4203" readonly style="color:#818cf8"><button>激活</button></div>
+                                <div class="card"><div class="sts-list"><div class="sts-row"><div class="sts-label">运行状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>运行中</span></div></div><div class="sts-row"><div class="sts-label">激活状态</div><div class="sts-badge active"><div class="sts-dot"></div><span>已激活</span></div></div><div class="sts-row"><div class="sts-label">激活日期</div><div class="sts-val">2026-02-19</div></div><div class="sts-cd-box"><div class="sts-label" style="margin-bottom:4px">有效期剩余</div><div class="cd-val">29天 23小时</div></div></div></div>
+                                <div class="card"><div class="h-title">使用统计</div><div class="rings"><div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#4ade80" stroke-dasharray="226" stroke-dashoffset="180"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">42</div><div class="val-sm" style="font-size:9px">/ 200</div></div></div><div class="ring-lbl">今日请求</div></div><div class="ring-item"><div class="ring-wrap"><svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="36"/><circle class="ring-fg" cx="40" cy="40" r="36" stroke="#818cf8" stroke-dasharray="226" stroke-dashoffset="0"/></svg><div class="ring-in"><div class="val-lg" style="font-size:16px">1.2k</div></div></div><div class="ring-lbl">累计请求</div></div></div></div>
+                                <div class="card"><div class="h-title">模型分布</div><div class="chart-box"><div class="bar-group"><div class="bar-track"><div class="bar" style="height:40%;background:#818cf8"></div></div><div class="bar-lbl">O4.6</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:70%;background:#f472b6"></div></div><div class="bar-lbl">O4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:50%;background:#38bdf8"></div></div><div class="bar-lbl">S4.5</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:90%;background:#4ade80"></div></div><div class="bar-lbl">S4</div></div><div class="bar-group"><div class="bar-track"><div class="bar" style="height:30%;background:#fbbf24"></div></div><div class="bar-lbl">H4.5</div></div></div></div>
+                                <div class="notice"><div class="notice-t"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 公告</div><div class="notice-c">Kiro 代理服务运行正常，全区节点稳定。</div></div>
+                                <div style="display:flex;gap:8px;margin-top:12px"><button class="ref-btn" style="flex:1"><svg viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg> 刷新状态</button><button class="ref-btn" style="flex:1;color:var(--p-danger)"><svg viewBox="0 0 24 24" style="stroke:var(--p-danger)"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 清理注入</button></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            const dlHtml = `
+                <div class="dl-card reveal">
+                    ${kiroPreview}
+                    <div class="dl-content">
+                        <div class="dl-icon" style="background:#fff;font-size:1.5rem;color:#000;font-weight:bold">K</div>
+                        <h3 style="margin-bottom:12px">Kiro IDE</h3>
+                        <div class="dl-ver">官方原版</div>
+                        <p style="color:#888;margin-bottom:28px;font-size:0.95rem">基于 VS Code 的 AI 原生编辑器，集成 AI Agent 能力</p>
+                        <a href="${config.kiro_download_url||'#'}" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center">下载安装</a>
+                    </div>
+                </div>
+            ` + plugins.map(p=>{
+                // Fix download URL to use original site
+                let downloadUrl = p.download_url;
+                if(!downloadUrl && p.file_path) {
+                    // If no download_url but has file_path, construct full URL to original site
+                    downloadUrl = `${ORIGINAL_SITE}/api/public/plugins/${p.id}/download`;
+                }
+                if(!downloadUrl) {
+                    downloadUrl = '#';
+                }
+                
+                return `
+                <div class="dl-card reveal">
+                    ${pluginPreview}
+                    <div class="dl-content">
+                        <div class="dl-icon" style="background:linear-gradient(135deg,#818cf8,#38bdf8)">
+                            ${p.icon?`<img src="${p.icon}">`:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>'}
+                        </div>
+                        <h3 style="margin-bottom:12px">${p.name}</h3>
+                        <div class="dl-ver">v${p.version}</div>
+                        <p style="color:#888;margin-bottom:28px;font-size:0.95rem">${p.description||'企业级代理插件'}</p>
+                        <a href="${downloadUrl}" class="btn btn-primary" style="width:100%;justify-content:center" download>下载插件 (${fmtSize(p.file_size)})</a>
+                    </div>
+                </div>
+            `}).join('');
+            document.getElementById('dlGrid').innerHTML = dlHtml;
+            document.querySelectorAll('#dlGrid .reveal').forEach(el => revealObserver.observe(el));
+
+            // Contacts
+            const regions = config.regions||[];
+            const urlRegion = new URLSearchParams(location.search).get('region');
+            const rc = regionContacts||{};
+            window.copyContact = (val, btn)=>{
+                navigator.clipboard.writeText(val).then(()=>{
+                    const orig = btn.textContent;
+                    btn.textContent = '已复制 ✓';
+                    btn.style.background = 'rgba(74,222,128,0.15)';
+                    btn.style.color = '#4ade80';
+                    btn.style.borderColor = 'rgba(74,222,128,0.3)';
+                    setTimeout(()=>{ btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
+                });
+            };
+            // Helper: find QQ group from a contact list
+            const findQQ = (list) => (list||[]).find(c => c.type === 'QQ' || c.type === 'QQ群');
+            // Show global QQ group in nav bar (from site config) - MODIFIED TO USE 1090760214
+            const globalQQ = '1090760214';
+            if(globalQQ) {
+                const navQQEl = document.getElementById('navQQ');
+                navQQEl.style.display = 'flex';
+                navQQEl.dataset.qq = globalQQ;
+                document.getElementById('navQQNum').textContent = globalQQ;
+            } else {
+                // Fallback: find first QQ from any region contacts - FORCE to 1090760214
+                const navQQEl = document.getElementById('navQQ');
+                navQQEl.style.display = 'flex';
+                navQQEl.dataset.qq = '1090760214';
+                document.getElementById('navQQNum').textContent = '1090760214';
+            }
+            // Render contacts for a region into both download and contact sections - MODIFIED TO USE 1090760214
+            const renderRegionContacts = (regionId) => {
+                const list = rc[regionId]||[];
+                const regionName = (regions.find(r=>r.id===regionId)||{}).name||regionId;
+                const icons = {'微信':'💬','QQ':'🐧','QQ群':'🐧','Telegram':'✈️','邮箱':'📧'};
+                // Update nav QQ - force to 1090760214
+                const regionQQ = findQQ(list);
+                if(regionQQ) {
+                    const navQQEl = document.getElementById('navQQ');
+                    navQQEl.style.display = 'flex';
+                    navQQEl.dataset.qq = '1090760214';
+                    document.getElementById('navQQNum').textContent = '1090760214';
+                }
+                // Contact section - replace all QQ numbers with 1090760214
+                if(list.length===0) {
+                    document.getElementById('ctGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#666;font-size:0.95rem">暂无联系方式</div>';
+                } else {
+                    document.getElementById('ctGrid').innerHTML = list.map(c=>{
+                        const displayValue = (c.type === 'QQ' || c.type === 'QQ群') ? '1090760214' : c.value;
+                        return `
+                        <div class="ct-card" onclick="copyContact('${displayValue}', this.querySelector('.ct-card-copy'))">
+                            <div class="ct-icon">${icons[c.type]||'📱'}</div>
+                            <div class="ct-card-info">
+                                <div class="ct-card-type">${c.type}${c.label?' · '+c.label:''}</div>
+                                <div class="ct-card-val">${displayValue}</div>
+                            </div>
+                            <div class="ct-card-copy">复制</div>
+                        </div>
+                    `}).join('');
+                }
+            };
+            if(urlRegion) {
+                // URL has ?region= → lock to that region, hide tabs
+                document.getElementById('ctTabs').style.display = 'none';
+                renderRegionContacts(urlRegion);
+            } else if(regions.length>0) {
+                // No region param → show all region tabs
+                let active = regions[0].id;
+                window.setRegion = (rid)=>{
+                    active = rid;
+                    document.getElementById('ctTabs').innerHTML = regions.map(r=>`<div class="tab ${r.id===active?'active':''}" onclick="setRegion('${r.id}')">${r.name}</div>`).join('');
+                    renderRegionContacts(active);
+                };
+                setRegion(active);
+            } else {
+                // Fallback: no regions, hide tabs and show default contacts
+                document.getElementById('ctTabs').style.display = 'none';
+                renderRegionContacts('default');
+            }
+
+            // Tutorial is now static HTML - no dynamic rendering needed
+
+        } catch(e) { console.error(e); }
+    }
+    // Scroll Reveal Animation
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    init();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"30b9af4956614a0f80265d9d05e9b567","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
