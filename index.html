@@ -33,8 +33,8 @@
                 radial-gradient(circle at 0% 50%, rgba(59, 130, 246, 0.1), transparent 30%);
         }
 
-        a { text-decoration: 无; color: inherit; }
-        ul { list-style: 无; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
 
         /* Utilities */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; }
@@ -46,7 +46,7 @@
 
         /* Nav */
         nav {
-            position: 已修复; top: 0; left: 0; right: 0; z-index: 100;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
             background: rgba(3, 0, 20, 0.6); backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border);
         }
@@ -66,7 +66,7 @@
         .hero::after {
             content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 800px; height: 800px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
-            opacity: 0.2; pointer-events: 无; z-index: -1;
+            opacity: 0.2; pointer-events: none; z-index: -1;
         }
         .badge {
             display: inline-flex; align-items: center; gap: 6px;
@@ -1283,19 +1283,19 @@
     }
 
     async function init() {
-        // Default data - MODIFIED: Use original site for downloads, QQ changed to 1090760214
+        // Default data - Use original site for downloads, QQ: 1090760214
         const ORIGINAL_SITE = 'https://nexusphere.icu';
         
         let plugins = [];
         let config = {
             qq_group: '1090760214',
-            kiro_download_url: 'https://kiro.dev/download',
+            kiro_download_url: 'https://kiro.dev/downloads/',
             regions: [{id: 'default', name: '默认区域'}]
         };
         let regionContacts = {
-            'default': [
-                {type: 'QQ群', value: '1090760214', label: '官方群'},
-                {type: 'QQ', value: '1090760214', label: '客服'}
+            'B': [
+                {type: 'QQ', value: '1090760214', label: 'QQ群'},
+                {type: '其他', value: '1090760214', label: 'QQ群'}
             ]
         };
         
@@ -1317,12 +1317,12 @@
             // Fallback: redirect download buttons to original site
             plugins = [
                 {
-                    id: 'kiro-proxy',
-                    name: 'Kiro 代理插件',
-                    version: '1.0.0',
-                    description: '企业级代理插件，支持全系列 Claude 模型',
-                    file_size: 1024000,
-                    download_url: ORIGINAL_SITE + '/?region=B#downloads',
+                    id: 6,
+                    name: 'kiro无限续杯',
+                    version: '1.3.4',
+                    description: '',
+                    file_size: 610389,
+                    file_path: '/uploads/plugins/1773107106994-5ab06f35.vsix',
                     icon: ''
                 }
             ];
@@ -1453,7 +1453,7 @@
             };
             // Helper: find QQ group from a contact list
             const findQQ = (list) => (list||[]).find(c => c.type === 'QQ' || c.type === 'QQ群');
-            // Show global QQ group in nav bar (from site config) - MODIFIED TO USE 1090760214
+            // Show global QQ group in nav bar
             const globalQQ = '1090760214';
             if(globalQQ) {
                 const navQQEl = document.getElementById('navQQ');
@@ -1461,18 +1461,18 @@
                 navQQEl.dataset.qq = globalQQ;
                 document.getElementById('navQQNum').textContent = globalQQ;
             } else {
-                // Fallback: find first QQ from any region contacts - FORCE to 1090760214
+                // Fallback: find first QQ from any region contacts
                 const navQQEl = document.getElementById('navQQ');
                 navQQEl.style.display = 'flex';
                 navQQEl.dataset.qq = '1090760214';
                 document.getElementById('navQQNum').textContent = '1090760214';
             }
-            // Render contacts for a region into both download and contact sections - MODIFIED TO USE 1090760214
+            // Render contacts for a region
             const renderRegionContacts = (regionId) => {
                 const list = rc[regionId]||[];
                 const regionName = (regions.find(r=>r.id===regionId)||{}).name||regionId;
                 const icons = {'微信':'💬','QQ':'🐧','QQ群':'🐧','Telegram':'✈️','邮箱':'📧'};
-                // Update nav QQ - force to 1090760214
+                // Update nav QQ
                 const regionQQ = findQQ(list);
                 if(regionQQ) {
                     const navQQEl = document.getElementById('navQQ');
@@ -1480,7 +1480,7 @@
                     navQQEl.dataset.qq = '1090760214';
                     document.getElementById('navQQNum').textContent = '1090760214';
                 }
-                // Contact section - replace all QQ numbers with 1090760214
+                // Contact section
                 if(list.length===0) {
                     document.getElementById('ctGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#666;font-size:0.95rem">暂无联系方式</div>';
                 } else {
@@ -1498,7 +1498,7 @@
                     `}).join('');
                 }
             };
-            // MODIFIED: Always show single contact with QQ 1090760214, hide region tabs
+            // Always show single contact with QQ 1090760214, hide region tabs
             document.getElementById('ctTabs').style.display = 'none';
             
             // Create fixed contact list with only QQ 1090760214
